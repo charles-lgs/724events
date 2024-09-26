@@ -1,4 +1,10 @@
-import { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import { useData } from "../../contexts/DataContext";
 import { getMonth } from "../../helpers/Date";
 
@@ -7,22 +13,59 @@ import "./style.scss";
 const Slider = () => {
   const { data } = useData();
   const [index, setIndex] = useState(0);
-  const byDateDesc = data?.focus.sort((evtA, evtB) =>
-    new Date(evtA.date) < new Date(evtB.date) ? -1 : 1
+
+  // Ajout d'une référence pour gérer le timer //
+  const timerRef = useRef(null);
+
+  // Optimisation du tri pour l'ordre d'affichage par date //
+  const byDateDesc = useMemo(
+    () =>
+      data?.focus.sort(
+        (evtA, evtB) => new Date(evtA.date) - new Date(evtB.date)
+      ),
+    [data]
   );
-  const nextCard = () => {
-    setTimeout(
-      () => setIndex(index < byDateDesc.length ? index + 1 : 0),
-      5000
+
+  // Utilisation de useCallback pour mémoriser nextCard //
+  const nextCard = useCallback(() => {
+    setIndex((prevIndex) =>
+      prevIndex < byDateDesc.length - 1 ? prevIndex + 1 : 0
     );
-  };
+  }, [byDateDesc]);
+
+  // Fonction pour réinitialiser le timer //
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    timerRef.current = setTimeout(nextCard, 5000);
+  }, [nextCard]);
+
+  // Ajout de resetTimer au useEffect //
   useEffect(() => {
-    nextCard();
-  });
+    resetTimer();
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [index, resetTimer]);
+
+  // Fonction pour gérer le changement de radio //
+  const handleRadioChange = (newIndex) => {
+    setIndex(newIndex);
+    resetTimer();
+  };
+
+  // Ajout d'une vérification pour l'absence de données //
+  if (!byDateDesc || byDateDesc.length === 0) {
+    return <div>Aucun événement à afficher</div>;
+  }
+
   return (
     <div className="SlideCardList">
       {byDateDesc?.map((event, idx) => (
-        <>
+        <React.Fragment key={event.id}>
           <div
             key={event.title}
             className={`SlideCard SlideCard--${
@@ -45,12 +88,14 @@ const Slider = () => {
                   key={`${event.id}`}
                   type="radio"
                   name="radio-button"
-                  checked={idx === radioIdx}
+                  checked={index === radioIdx}
+                  // Ajout d'un écouteur pour les boutons radio //
+                  onChange={() => handleRadioChange(radioIdx)}
                 />
               ))}
             </div>
           </div>
-        </>
+        </React.Fragment>
       ))}
     </div>
   );
