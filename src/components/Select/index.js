@@ -13,12 +13,17 @@ const Select = ({
   label,
   type = "normal",
 }) => {
-  const [value, setValue] = useState();
+  // Ajout de la valeur par défaut "null" à la place de "undefined" //
+  const [value, setValue] = useState(null);
   const [collapsed, setCollapsed] = useState(true);
+
+  // Mise a jour de la fonction //
+  // Nouvelle valeur pour onChange //
+  // Fermeture du menu après selection //
   const changeValue = (newValue) => {
-    onChange();
+    onChange(newValue);
     setValue(newValue);
-    setCollapsed(newValue);
+    setCollapsed(true);
   };
   return (
     <div className={`SelectContainer ${type}`} data-testid="select-testid">
@@ -32,17 +37,13 @@ const Select = ({
             <>
               {!titleEmpty && (
                 <li onClick={() => changeValue(null)}>
-                  <input defaultChecked={!value} name="selected" type="radio" />{" "}
-                  Toutes
+                  {/* defaultChecked devient checked */}
+                  <input checked={!value} name="selected" type="radio" /> Toutes
                 </li>
               )}
               {selection.map((s) => (
                 <li key={s} onClick={() => changeValue(s)}>
-                  <input
-                    defaultChecked={value === s}
-                    name="selected"
-                    type="radio"
-                  />{" "}
+                  <input checked={value === s} name="selected" type="radio" />
                   {s}
                 </li>
               ))}
@@ -88,7 +89,7 @@ Select.propTypes = {
   titleEmpty: PropTypes.bool,
   label: PropTypes.string,
   type: PropTypes.string,
-}
+};
 
 Select.defaultProps = {
   onChange: () => null,
@@ -96,6 +97,6 @@ Select.defaultProps = {
   label: "",
   type: "normal",
   name: "select",
-}
+};
 
 export default Select;

@@ -11,27 +11,29 @@ const PER_PAGE = 9;
 
 const EventList = () => {
   const { data, error } = useData();
-  const [type, setType] = useState();
+  const [type, setType] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const filteredEvents = (
-    (!type
-      ? data?.events
-      : data?.events) || []
-  ).filter((event, index) => {
-    if (
-      (currentPage - 1) * PER_PAGE <= index &&
-      PER_PAGE * currentPage > index
-    ) {
-      return true;
-    }
-    return false;
-  });
+
+  // Ajout vérification et modification du filtrage //
+  // Retourne un tableau vide si absence de data //
+  const filteredEvents = data?.events
+    ? data.events
+        .filter((event) => !type || event.type === type)
+        .slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE)
+    : [];
+
   const changeType = (evtType) => {
     setCurrentPage(1);
     setType(evtType);
   };
-  const pageNumber = Math.floor((filteredEvents?.length || 0) / PER_PAGE) + 1;
-  const typeList = new Set(data?.events.map((event) => event.type));
+
+  // Changement de la méthode de calcul //
+  const pageNumber = Math.ceil(
+    (data?.events.filter((event) => !type || event.type === type || [])
+      .length || 0) / PER_PAGE
+  );
+  const typeList = new Set(data?.events.map((event) => event.type) || []);
+
   return (
     <>
       {error && <div>An error occured</div>}
@@ -42,7 +44,7 @@ const EventList = () => {
           <h3 className="SelectTitle">Catégories</h3>
           <Select
             selection={Array.from(typeList)}
-            onChange={(value) => (value ? changeType(value) : changeType(null))}
+            onChange={(value) => changeType(value)}
           />
           <div id="events" className="ListContainer">
             {filteredEvents.map((event) => (
